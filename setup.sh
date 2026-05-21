@@ -17,6 +17,19 @@ ok()   { printf "%s✓ %s%s\n" "$C_GREEN" "$*" "$C_RESET"; }
 warn() { printf "%s⚠ %s%s\n" "$C_YELLOW" "$*" "$C_RESET"; }
 err()  { printf "%s✗ %s%s\n" "$C_RED"   "$*" "$C_RESET" >&2; }
 
+# curl | bash로 실행 시 stdin이 스크립트 자체라서 read가 깨짐.
+# 터미널에 직접 연결해서 사용자 입력을 받도록 함.
+if [[ ! -t 0 ]]; then
+  if (: </dev/tty) 2>/dev/null; then
+    exec </dev/tty
+  else
+    err "대화형 입력이 필요해요. 스크립트를 다운받아 실행해주세요:"
+    err "  curl -sSL https://raw.githubusercontent.com/ZQG1110/claude-telegram-setup/main/setup.sh -o setup.sh"
+    err "  bash setup.sh"
+    exit 1
+  fi
+fi
+
 CHANNELS_DIR="$HOME/.claude/channels"
 DEFAULT_TELEGRAM="$CHANNELS_DIR/telegram"
 
