@@ -17,11 +17,14 @@ ok()   { printf "%s✓ %s%s\n" "$C_GREEN" "$*" "$C_RESET"; }
 warn() { printf "%s⚠ %s%s\n" "$C_YELLOW" "$*" "$C_RESET"; }
 err()  { printf "%s✗ %s%s\n" "$C_RED"   "$*" "$C_RESET" >&2; }
 
-# curl | bash로 실행 시 stdin이 스크립트 자체라서 read가 깨짐.
-# 터미널에 직접 연결해서 사용자 입력을 받도록 함.
-if [[ ! -t 0 ]]; then
+# curl | bash로 실행 시 stdin이 스크립트 자체. read가 스크립트 다음 줄을 값으로
+# 읽어가버리니, /dev/tty를 별도 FD(3)로 열어두고 read는 -u 3로 받는다.
+# stdin은 그대로 둬야 bash가 나머지 스크립트를 계속 읽음.
+if [[ -t 0 ]]; then
+  exec 3<&0
+else
   if (: </dev/tty) 2>/dev/null; then
-    exec </dev/tty
+    exec 3</dev/tty
   else
     err "대화형 입력이 필요해요. 스크립트를 다운받아 실행해주세요:"
     err "  curl -sSL https://raw.githubusercontent.com/ZQG1110/claude-telegram-setup/main/setup.sh -o setup.sh"
@@ -39,7 +42,7 @@ info "현재 폴더: $PWD"
 echo ""
 
 DEFAULT_NAME=$(basename "$PWD")
-read -r -p "프로젝트 이름 [${DEFAULT_NAME}]: " PROJECT_NAME
+read -u 3 -r -p "프로젝트 이름 [${DEFAULT_NAME}]: " PROJECT_NAME
 PROJECT_NAME=${PROJECT_NAME:-$DEFAULT_NAME}
 
 SAFE_NAME=$(echo "$PROJECT_NAME" | sed 's/[^a-zA-Z0-9_-]/-/g')
@@ -52,7 +55,7 @@ STATE_DIR="$CHANNELS_DIR/telegram-$PROJECT_NAME"
 
 if [[ -d "$STATE_DIR" ]]; then
   warn "'$STATE_DIR' 이미 있어요"
-  read -r -p "덮어쓸까요? [y/N]: " OVERWRITE
+  read -u 3 -r -p "덮어쓸까요? [y/N]: " OVERWRITE
   case "$OVERWRITE" in
     [yY]|[yY][eE][sS]) ;;
     *) echo "취소됨"; exit 1 ;;
@@ -66,14 +69,14 @@ fi
 
 if [[ -n "$CHAT_ID" ]]; then
   info "기존 텔레그램 설정에서 chat_id 발견: $CHAT_ID"
-  read -r -p "그대로 사용할까요? [Y/n]: " USE_EXISTING
+  read -u 3 -r -p "그대로 사용할까요? [Y/n]: " USE_EXISTING
   case "$USE_EXISTING" in
     [nN]|[nN][oO]) CHAT_ID="" ;;
   esac
 fi
 
 if [[ -z "$CHAT_ID" ]]; then
-  read -r -p "본인 텔레그램 chat_id (숫자): " CHAT_ID
+  read -u 3 -r -p "본인 텔레그램 chat_id (숫자): " CHAT_ID
 fi
 
 if ! [[ "$CHAT_ID" =~ ^[0-9]+$ ]]; then
@@ -83,7 +86,7 @@ fi
 
 echo ""
 info "BotFather에서 받은 봇 토큰을 붙여넣으세요 (입력 시 화면 표시 안됨)"
-read -r -s -p "봇 토큰: " BOT_TOKEN
+read -u 3 -r -s -p "봇 토큰: " BOT_TOKEN
 echo ""
 
 if [[ -z "$BOT_TOKEN" ]]; then
@@ -93,7 +96,7 @@ fi
 
 if ! [[ "$BOT_TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]+$ ]]; then
   warn "토큰 형식이 평소와 달라요 (예상: 숫자:문자열)"
-  read -r -p "그래도 진행할까요? [y/N]: " CONFIRM
+  read -u 3 -r -p "그래도 진행할까요? [y/N]: " CONFIRM
   case "$CONFIRM" in
     [yY]|[yY][eE][sS]) ;;
     *) echo "취소됨"; exit 1 ;;
