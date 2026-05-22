@@ -11,9 +11,17 @@
 4. 현재 폴더에 `.tgbot` 마커 파일 생성
 5. 래퍼 함수가 `claude` 실행 시 현재 폴더의 `.tgbot`을 읽고 알맞은 봇으로 자동 연결
 
-## 1회 설치 (래퍼 함수)
+## 사전 요구사항
 
-각 기기에서 한 번만 실행하면 됩니다.
+- [Claude Code](https://claude.com/claude-code) (`npm install -g @anthropic-ai/claude-code`)
+- [Bun](https://bun.sh) — 텔레그램 플러그인 런타임 (없으면 install 스크립트가 안내해줌)
+
+## 1회 설치 (각 기기에서 1회)
+
+`install` 스크립트가 다음 세 가지를 한 번에 해줍니다:
+1. `claude-plugins-official` 마켓플레이스 등록
+2. `telegram` 플러그인 설치
+3. 폴더별 봇 자동 선택 셸 래퍼 등록
 
 ### Mac / Linux (zsh, bash)
 
